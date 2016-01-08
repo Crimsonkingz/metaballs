@@ -1,17 +1,26 @@
+/*
+	Metaballs with help from:
+	http://www.somethinghitme.com/2012/06/06/2d-metaballs-with-canvas/
+*/
+
+
 var canvas = document.getElementById("canvas");
 var ctx = canvas.getContext("2d");
 
+// Temporary canvas used to allow thresholding of alpha values to control "blobbyness"
 var tempCanvas = document.createElement("canvas");
 var tempCtx = tempCanvas.getContext("2d");
 
-var width = 500,
-	height = 500;
+var width = canvas.width,
+	height = canvas.height;
 
 tempCanvas.width = width;
 tempCanvas.height = height;
 
 var particlesArray = [];
 
+// Threshold for alpha cut-off, smaller numbers increase the size of the blobs but also make them "fuzzier"
+// ~ 200 is a good value 
 var threshold = 200;
 
 // shim layer with setTimeout fallback - Paul Irish
@@ -28,18 +37,24 @@ var Particle = function(x, y, vx, vy, radius) {
 	this.position = {x: x, y: y};
 	this.velocity = {x: vx, y: vy};
 	this.radius = radius;
-	this.colour = {red:255, green:0,blue:0};
+
+	// Rainbow blobs
+	// this.colour = {red:Math.floor(255*Math.random()), green:Math.floor(255*Math.random()),blue:Math.floor(255*Math.random())};
+
+	// Sea blue blobs
+	this.colour = {red:56, green:164,blue:223};
 };
 
 var createParticles = function(n) {
 	for (var i = 0; i < n; i++) {
-		// Define new x, y positions and velocities, and a radius
+		// Define new x & y positions and velocities, radius
 		var xPos = Math.random() * canvas.width,
 			yPos = Math.random() * canvas.height,
 			xVel = Math.random() * 4 - 2,
 			yVel = Math.random() * 4 - 2,
 			rad = Math.floor(Math.random() * 30) + 30;
 
+		// Create a particle with the above values and push to an array	
 		var p = new Particle(xPos, yPos, xVel, yVel, rad);
 		particlesArray.push(p);
 	}
@@ -81,9 +96,11 @@ var render = function() {
 		tempCtx.arc(particle.position.x, particle.position.y, particle.radius, 0, 2* Math.PI);
 		tempCtx.fill();
 	}
+	// Send to function that takes pixel data and implements alpha cut-off - then draws to the main canvas
 	metaballDraw();
 
 };
+
 
 var metaballDraw = function() {
 	// Get pixel data of temporary canvas, this allows us to check the alpha values
@@ -94,14 +111,17 @@ var metaballDraw = function() {
 	// So to check the alpha value we must look at the n*4th pixel
 	for (var i = 0; i < pixels.length; i += 4) {
 		if (pixels[i+3] < threshold) {
-			pixels[i+3] /= 6;
-			if (pixels[i+3] > threshold/4) {
-				pixels[i+3] = 0;
-			}
+			pixels[i+3] = 0;
 		}
 	}
 	// Draw final result to the real canvas
 	ctx.putImageData(imgData, 0, 0);
 };
-createParticles(50);
-render();
+
+var init = function() {
+	createParticles(50);
+	render();
+
+};
+
+init();
